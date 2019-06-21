@@ -11,3 +11,9 @@ Description: Prepare basemaps for the Arabesque project.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
+Imports: 
+    dplyr,
+    magrittr,
+    sf,
+    fs,
+    archive
