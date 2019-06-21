@@ -1,0 +1,13 @@
+Package: arabesqueFonds
+Title: What the Package Does (One Line, Title Case)
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Nicolas",
+           family = "Roelandt",
+           role = c("aut", "cre"),
+           email = "nicolas.roelandt@ifsttar.fr",
+           comment = c(ORCID = "0000-0001-9698-4275"))
+Description: Prepare basemaps for the Arabesque project.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
