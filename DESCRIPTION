@@ -13,7 +13,10 @@ Encoding: UTF-8
 LazyData: true
 Imports: 
     dplyr,
+    purrr,
+    attempt,
     magrittr,
     sf,
     fs,
-    archive
+    archive, 
+    stringr,
