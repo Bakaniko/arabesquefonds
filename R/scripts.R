@@ -18,81 +18,107 @@ get_archives <- function(pattern){
 #' unzip archive files
 #'
 #' @param arch_path path to the archive
+#' @param out_folder path to the out folder
 #' @export
 
-unarchive <- function(arch_path){
+unarchive <- function(arch_path, out_folder = "converted/"){
   require(archive) # unzip functions
-  require(purrr)
+  require(attempt) # try_catch features
 
   message("######################")
   ## print filename for debug
   filename <- stringr::str_split(arch_path, "/") %>% unlist() %>% last()
-  print(filename)
+  #print(filename)
 
   temp <- tempdir() # répertoire temporaire pour la décompression
-  message("open archive")
-  arch_to_extract <-  try_catch(
-    archive::archive(arch_path),
+  message(paste("Opening archive :",filename))
+
+  try_catch(
+    archive::archive_extract(arch_path, temp),
             .e = ~ paste0("There is an error: ", .x),
             .w = ~ paste0("This is a warning: ", .x))
-  print( paste("writing files from :", filename))
 
-  for(path in arch_to_extract){
 
-    # Extract path and filenames
-    data <- path %>%
-            as_data_frame() %>%
-            dplyr::filter(
-              stringr::str_detect(
-                value, '.shp|.dbf|.prj|.shx|.cpg')) %>% # detect shapefile files
-            dplyr::mutate(
-              file = stringr::str_extract(value, "\\w*\\.[a-z]{3}"))
-
-    # stockage dans un répertoire temporaire
-    for (fichier in data$value) {
-      file.copy(from = fichier, to = file.path(temp, basename(fichier)))
-    }
-
-  }
-
+  path <- "ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_LAMB93_FR/CHEF_LIEU.shp"
+  #path <- fs::path(temp, path)
+   #print(list.files(path))
   ## Conversion
-  print(list.files(path = temp))
+  #files <- list.files(path = temp, recursive = TRUE)
+  print(dir_info(path = temp) %>% select(path))
+  toto <- dir_ls(temp, recurse = TRUE, glob = "*.shp") %>% head(n=1) %>%
+    st_read()
+  toto
 
+  # For each files, test if it is a shapefile them opens it with {sf}
+  #convert_to_geojson_out <- purrr::partial(convert_to_geojson,dir = temp)
+  #purrr::walk(files, convert_to_geojson)
+  #purrr::map(files, print)
+  #for(){}
+  ## Extraction
+  # message(paste("writing files from :", filename))
+
+  ## Cleaning and exiting
   rm(temp) # suppression du répertoire temporaire
-  print("leaving unarchive")
+  message("leaving unarchive")
 }
 
 
 #' create_convert
-#' Create convert folder to store converted files
+#' Create converted folder to store converted files
+#' @param folder_name name of the folder to create
 #' @examples
 #' \dontrun{
 #' create_convert()
 #' create_convert("toto")
 #' }
 
-create_convert <- function(folder_name = "convert"){
-  require(attempt) # try catch non archive file
+create_convert <- function(folder_name = "converted"){
+  require(attempt)
+
+  # try to create a new folder
   try_catch(dir_create(folder_name),
             .e = ~ paste0("There is an error: ", .x),
             .w = ~ paste0("This is a warning: ", .x))
 }
 
-#' convert them to GeoJSON in the convert folder and zip them
+#' convert file to geoJson
+#'
+#' @param path path to file to convert
+#' @param out_folder
+#' @param layer layer name (optional)
+#' @param dir folder of source file (optional)
+#' @examples
+#' \dontrun{
+#' convert_to_geojson(path, out)
+#' }
+convert_to_geojson <- function(path, layer =NULL, dir = NULL){
+  require(sf)
+  require(attempt)
 
+  # try to open the file
+  #print(path)
+
+  # print(list.files(path))
+  # spatial_df <- attempt::try_catch(sf::st_read(dsn=path),
+  #           .e = ~ paste0("There is an error: ", .x),
+  #           .w = ~ paste0("This is a warning: ", .x))
+  # print(spatial_df)
+  #print(list.files(outfolder))
+
+}
 #' provide a summary of actions
 
 
 #' prepare_data
 #'
 #' Prepare the data from archived shapefiles
-#'
+#' @param folder_name name of the destination folder
 #' @example
 #' prepare_data()
 #' importFrom magrittr "%>%"
 #' @export
 
-prepare_data <- function(){
+prepare_data <- function(folder_name = "converted"){
   require(dplyr)   # data science !
   require(purrr)   # functionnal programming
   require(attempt) # try catch non archive file
@@ -110,11 +136,11 @@ prepare_data <- function(){
   archives_list <- arabesqueFonds::get_archives(pattern)
 
   ## Create convert folder
-  arabesqueFonds::create_convert()
+  arabesqueFonds::create_convert(folder_name)
 
   ## extract data from file
   message("\n### Extract Archives ###")
   purrr::map(archives_list, arabesqueFonds::unarchive)
 
-  return(0)
+  return(NULL)
 }
