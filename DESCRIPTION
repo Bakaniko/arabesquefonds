@@ -20,3 +20,5 @@ Imports:
     fs,
     archive, 
     stringr,
+    sp,
+    rgdal

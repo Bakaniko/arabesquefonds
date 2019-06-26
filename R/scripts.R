@@ -33,27 +33,26 @@ unarchive <- function(arch_path, out_folder = "converted/"){
   temp <- tempdir() # répertoire temporaire pour la décompression
   message(paste("Opening archive :",filename))
 
+
+  if (!"GeoJSON" %in% sf::st_drivers()[,1]) {
+    message("GeoJSON driver not available")
+    return(1)
+  }
+  if (!"ESRI Shapefile" %in% sf::st_drivers()[,1]) {
+    message("ESRI Shapefile driver not available")
+    return(1)
+  }
+
   try_catch(
     archive::archive_extract(arch_path, temp),
             .e = ~ paste0("There is an error: ", .x),
             .w = ~ paste0("This is a warning: ", .x))
 
-
-  path <- "ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_LAMB93_FR/CHEF_LIEU.shp"
-  #path <- fs::path(temp, path)
-   #print(list.files(path))
   ## Conversion
-  #files <- list.files(path = temp, recursive = TRUE)
-  print(dir_info(path = temp) %>% select(path))
-  toto <- dir_ls(temp, recurse = TRUE, glob = "*.shp") %>% head(n=1) %>%
-    st_read()
-  toto
 
-  # For each files, test if it is a shapefile them opens it with {sf}
-  #convert_to_geojson_out <- purrr::partial(convert_to_geojson,dir = temp)
-  #purrr::walk(files, convert_to_geojson)
-  #purrr::map(files, print)
-  #for(){}
+
+  files <- dir_ls(temp, recurse = TRUE, glob = "*.shp")
+  purrr::map(files, convert_to_geojson, dir = "converted", extension = ".geojson")
   ## Extraction
   # message(paste("writing files from :", filename))
 
@@ -87,23 +86,44 @@ create_convert <- function(folder_name = "converted"){
 #' @param out_folder
 #' @param layer layer name (optional)
 #' @param dir folder of source file (optional)
+#' @param extension extension to use(optional, default = json)
 #' @examples
 #' \dontrun{
 #' convert_to_geojson(path, out)
 #' }
-convert_to_geojson <- function(path, layer =NULL, dir = NULL){
+convert_to_geojson <- function(path, layer =NULL, dir = NULL, extension = ".geojson"){
   require(sf)
   require(attempt)
 
-  # try to open the file
-  #print(path)
 
-  # print(list.files(path))
-  # spatial_df <- attempt::try_catch(sf::st_read(dsn=path),
-  #           .e = ~ paste0("There is an error: ", .x),
-  #           .w = ~ paste0("This is a warning: ", .x))
-  # print(spatial_df)
-  #print(list.files(outfolder))
+
+  # read data
+
+  data <- sf::st_read(dsn = path)
+
+  # Extract CRS
+
+    path_to_proj <- path %>% stringr::str_replace(pattern = "\\.[a-z]{3}", replacement = ".prj")
+    print(path_to_proj)
+    # read wkt string
+    wkt <- readLines(path_to_proj, warn = FALSE)
+    # Apply crs to data
+    #st_crs(data, wkt = wkt)
+    st_crs(data, 2154)
+
+    print(st_crs(data))
+
+  # extract layer name
+  layer_name <- path %>%
+    stringr::str_split(pattern = "/") %>%
+    unlist() %>%
+    last() %>% stringr::str_replace(pattern = "\\.[a-z]{3}", replacement = "")
+
+  # Create destination name
+  destination <- paste0(dir, "/", layer_name, extension)
+
+  # write file
+  data %>% st_write(dsn = destination, layer_options = "OVERWRITE=true")
 
 }
 #' provide a summary of actions
