@@ -1,0 +1,100 @@
+---
+title: "Untitled"
+author: "Nicolas Roelandt"
+date: "24/06/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+
+# Liste de fichier à copier
+# Value : chemin vers le fichier
+# file: nom du fichier
+
+data <- structure(list(value = c("ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_LAMB93_FR/CHEF_LIEU.cpg", 
+"ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_LAMB93_FR/CHEF_LIEU.dbf", 
+"ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_LAMB93_FR/CHEF_LIEU.prj", 
+"ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_LAMB93_FR/CHEF_LIEU.shp", 
+"ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_LAMB93_FR/CHEF_LIEU.shx", 
+"ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_LAMB93_FR/CHEF_LIEU_CARTO.cpg", 
+"ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_LAMB93_FR/CHEF_LIEU_CARTO.dbf", 
+"ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_LAMB93_FR/CHEF_LIEU_CARTO.prj", 
+"ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_LAMB93_FR/CHEF_LIEU_CARTO.shp", 
+"ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_LAMB93_FR/CHEF_LIEU_CARTO.shx"
+), file = c("CHEF_LIEU.cpg", "CHEF_LIEU.dbf", "CHEF_LIEU.prj", 
+"CHEF_LIEU.shp", "CHEF_LIEU.shx", "CHEF_LIEU_CARTO.cpg", "CHEF_LIEU_CARTO.dbf", 
+"CHEF_LIEU_CARTO.prj", "CHEF_LIEU_CARTO.shp", "CHEF_LIEU_CARTO.shx"
+)), class = c("tbl_df", "tbl", "data.frame"), row.names = c(NA, 
+-10L))
+data
+
+temp <- tempdir() # répertoire temporaire pour la décompression
+
+# stockage dans un répertoire temporaire
+# 
+# data %>% rowwise() %>%
+#       walk(.f = file_copy(value, paste0("temp/", file)))
+
+for (fichier in data$value) {
+  file.copy(from = fichier, to = file.path(temp, basename(fichier)))
+}
+```
+
+```{r}
+library(sf)
+library(sp)
+library(rgdal)
+
+# Read NY8_utm18  data a
+NY8_utm18 <- st_read(dsn = system.file("shapes/NY8_utm18.shp", package = "spData"))
+
+# IGN data source : http://professionnels.ign.fr/adminexpress
+## Continental France
+
+france_dataset <- "ADMIN-EXPRESS-COG_2-0__SHP_L93__FRA_2019-05-20/ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_LAMB93_FR/REGION.shp"
+france_regions <- st_read(dsn = france_dataset)
+
+## French Guyana
+
+guyana_dataset <- readOGR("ADMIN-EXPRESS-COG_2-0__SHP_L93__FRA_2019-05-20/ADMIN-EXPRESS-COG_2-0__SHP__FRA_2019-05-20/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2019-05-20/ADE-COG_2-0_SHP_UTM22RGFG95_D973", "REGION")
+
+
+## Proj4 string is read well
+proj4string(guyana_dataset)
+
+## But the EPSG can not be determined
+showEPSG(proj4string(guyana_dataset))
+# extract CRS
+print(st_crs(NY8_utm18)) # that's working
+print(st_crs(france_regions)) # that's not working 
+print(st_crs(french_guyana_regions)) # that's not working 
+
+## Data is correctly read
+rgdal::ogrInfo(dsn =  system.file("shapes/NY8_utm18.shp", package = "spData"))
+rgdal::ogrInfo(dsn =  france_dataset)
+
+
+
+```
+```{r}
+# create destination
+destination <- paste0(temp, "/", "NY8_utm18.geojson")
+
+# write data
+st_write(sids, dsn = destination, delete_dsn=TRUE)
+
+list.files(temp)
+
+readLines(destination, n =4)
+```
+

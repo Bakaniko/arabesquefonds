@@ -104,12 +104,14 @@ convert_to_geojson <- function(path, layer =NULL, dir = NULL, extension = ".geoj
   # Extract CRS
 
     path_to_proj <- path %>% stringr::str_replace(pattern = "\\.[a-z]{3}", replacement = ".prj")
-    print(path_to_proj)
+
     # read wkt string
     wkt <- readLines(path_to_proj, warn = FALSE)
     # Apply crs to data
     #st_crs(data, wkt = wkt)
-    st_crs(data, 2154)
+    #st_set_crs(data, st_crs( 2154))
+
+    data <- data %>% st_transform(crs = st_crs(2154))
 
     print(st_crs(data))
 
@@ -123,7 +125,7 @@ convert_to_geojson <- function(path, layer =NULL, dir = NULL, extension = ".geoj
   destination <- paste0(dir, "/", layer_name, extension)
 
   # write file
-  data %>% st_write(dsn = destination, layer_options = "OVERWRITE=true")
+  data %>% st_write(dsn = destination, delete_dsn=TRUE)
 
 }
 #' provide a summary of actions
