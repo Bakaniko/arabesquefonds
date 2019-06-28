@@ -111,7 +111,7 @@ convert_to_geojson <- function(path, layer =NULL, dir = NULL, extension = ".geoj
     #st_crs(data, wkt = wkt)
     #st_set_crs(data, st_crs( 2154))
 
-    data <- data %>% st_transform(crs = st_crs(2154))
+    #data <- data %>% st_transform(crs = st_crs(2154))
 
     print(st_crs(data))
 
